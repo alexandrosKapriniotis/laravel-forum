@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ThreadsController extends Controller
 {
@@ -48,9 +49,16 @@ class ThreadsController extends Controller
      *
      * @param Request $request
      * @return Application|\Illuminate\Http\RedirectResponse|Response|Redirector
+     * @throws ValidationException
      */
     public function store(Request $request)
     {
+        $this->validate($request, [
+            'title' => 'required',
+            'body' => 'required',
+            'channel_id' => 'required|exists:channels,id'
+        ]);
+
         $thread = Thread::create([
             'user_id' => Auth::id(),
             'channel_id' => $request->channel_id,

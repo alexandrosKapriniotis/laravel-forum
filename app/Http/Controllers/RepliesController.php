@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Thread;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RepliesController extends Controller
 {
@@ -20,9 +21,12 @@ class RepliesController extends Controller
      * @param $channelId
      * @param Thread $thread
      * @return RedirectResponse
+     * @throws ValidationException
      */
     public function store($channelId,Thread $thread): RedirectResponse
     {
+        $this->validate(request(),['body' => 'required']);
+
         $thread->addReply([
             'body' => request()->input('body'),
             'user_id' => auth()->id()
