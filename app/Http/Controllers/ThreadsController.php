@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Channel;
 use App\Models\Thread;
+use App\Models\User;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -10,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ThreadsController extends Controller
 {
@@ -24,11 +27,24 @@ class ThreadsController extends Controller
     /**
      * Display a listing of the resource.
      *
+     * @param Channel $channel
      * @return Application|Factory|View|Response
      */
-    public function index()
+    public function index(Channel $channel)
     {
-        $threads = Thread::latest()->take(10)->get();
+        if ($channel->exists){
+            $threads = $channel->threads()->latest();
+        } else {
+            $threads = Thread::latest()->take(10);
+        }
+
+        if($username = request('by')){
+            $user = User::where('name',$username)->firstOrFail();
+
+            $threads->where('user_id',$user->id);
+        }
+
+        $threads = $threads->get();
 
         return view('threads.index',compact('threads'));
     }
@@ -48,9 +64,16 @@ class ThreadsController extends Controller
      *
      * @param Request $request
      * @return Application|\Illuminate\Http\RedirectResponse|Response|Redirector
+     * @throws ValidationException
      */
     public function store(Request $request)
     {
+        $this->validate($request, [
+            'title' => 'required',
+            'body' => 'required',
+            'channel_id' => 'required|exists:channels,id'
+        ]);
+
         $thread = Thread::create([
             'user_id' => Auth::id(),
             'channel_id' => $request->channel_id,

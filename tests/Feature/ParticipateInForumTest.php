@@ -20,11 +20,9 @@ class ParticipateInForumTest extends TestCase
      * @test
      */
     function unauthenticated_users_may_not_add_replies(){
-        $this->expectException(AuthenticationException::class);
-
-        $thread = Thread::find(1);
-        dd($thread);
-        $this->post($thread->path(),[]);
+        $this->withExceptionHandling()
+            ->post('/threads/some-channel/1/replies', [])
+            ->assertRedirect('/login');
     }
 
     /**
@@ -40,5 +38,16 @@ class ParticipateInForumTest extends TestCase
         $this->post($thread->path().'/replies',$reply->toArray());
 
         $this->get($thread->path())->assertSee($reply->body);
+    }
+
+    /**
+     * @test
+     */
+    function a_reply_requires_a_body(){
+        $this->signIn();
+        $thread = Thread::factory()->create();
+        $reply = make(Reply::class,['body' => null]);
+
+        $this->post($thread->path().'/replies',$reply->toArray())->assertSessionHasErrors();
     }
 }
