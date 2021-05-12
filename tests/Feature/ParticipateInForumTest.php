@@ -29,15 +29,20 @@ class ParticipateInForumTest extends TestCase
      * @test
      * @return void
      */
-    function an_authenticated_user_may_participate_in_forum_threads(){
-        $this->be(User::factory()->create());
+    function an_authenticated_user_may_participate_in_forum_threads()
+    {
+        $this->withoutExceptionHandling();
 
-        $thread = Thread::factory()->create();
+        $this->signIn();
 
-        $reply = Reply::factory()->make();
+        $thread = create(Thread::class);
+        $reply = make(Reply::class);
+
         $this->post($thread->path().'/replies',$reply->toArray());
 
-        $this->get($thread->path())->assertSee($reply->body);
+        $this->assertDatabaseHas('replies',['body' => $reply->body]);
+
+        $this->assertEquals(1,$thread->fresh()->replies_count);
     }
 
     /**
@@ -48,6 +53,97 @@ class ParticipateInForumTest extends TestCase
         $thread = Thread::factory()->create();
         $reply = make(Reply::class,['body' => null]);
 
-        $this->post($thread->path().'/replies',$reply->toArray())->assertSessionHasErrors();
+        $this->json('POST',$thread->path().'/replies',$reply->toArray())->assertStatus(422);
+    }
+
+    /**
+     * @test
+     */
+    function unauthorised_users_cannot_delete_replies()
+    {
+        $this->withExceptionHandling();
+
+        $reply = create(Reply::class);
+
+        $this->delete("/replies/{$reply->id}")
+            ->assertRedirect('login');
+    }
+
+    /**
+     * @test
+     */
+    function authorised_users_can_delete_replies()
+    {
+        $this->signIn();
+
+        $reply = create(Reply::class,['user_id' => auth()->id()]);
+
+        $this->delete("/replies/{$reply->id}")->assertStatus(302);
+
+        $this->assertDatabaseMissing('replies',['id' => $reply->id]);
+        $this->assertEquals(0, $reply->thread->fresh()->replies_count);
+    }
+
+    /**
+     * @test
+     */
+    function authorised_users_can_update_replies()
+    {
+        $this->signIn();
+
+        $reply = create(Reply::class,['user_id' => auth()->id()]);
+
+        $updatedReply = 'you\'ve been changed, fool.';
+
+        $this->patch("/replies/{$reply->id}",['body' => $updatedReply]);
+
+        $this->assertDatabaseHas('replies',['id' => $reply->id,'body' => $updatedReply]);
+    }
+
+    /**
+     * @test
+     */
+    function unauthorised_users_cannot_update_replies()
+    {
+        $reply = create(Reply::class);
+
+        $this->patch("/replies/{$reply->id}")
+            ->assertRedirect('login');
+
+        $this->signIn()->patch("/replies/{$reply->id}")
+            ->assertStatus(403);
+    }
+
+    /**
+     * @test
+     */
+    function replies_that_contain_spam_may_not_be_created()
+    {
+        $this->withExceptionHandling();
+
+        $this->signIn();
+
+        $thread = create(Thread::class);
+
+        $reply  = make(Reply::class,[
+           'body' => 'Yahoo Customer Support'
+        ]);
+
+        $this->json('POST', $thread->path() . '/replies', $reply->toArray())->assertStatus(422);
+    }
+
+    /** @test */
+    function users_may_only_reply_a_maximum_of_once_per_minute()
+    {
+        $this->signIn();
+
+        $thread = create('App\Models\Thread');
+        $reply  = make('App\Models\Reply');
+
+         $this->post($thread->path() . '/replies', $reply->toArray())
+            ->assertStatus(201);
+
+        $this->post($thread->path() . '/replies', $reply->toArray())
+            ->assertStatus(429);
     }
 }

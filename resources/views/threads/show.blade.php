@@ -1,49 +1,55 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <div class="card">
-                    <div class="card-header">
-                        <a href="#">
-                            {{ $thread->creator->name }} posted:
-                        </a>
-                        {{ $thread->title }}
-                    </div>
-
-                    <div class="card-body">
-                        {{ $thread->body }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                @foreach ($thread->replies as $reply)
-                    @include('threads.reply')
-                @endforeach
-            </div>
-        </div>
-
-        @auth
+    <thread-view :initial-replies-count="{{ $thread->replies_count }}" inline-template>
+        <div class="container">
             <div class="row">
-                <div class="col-md-8 col-md-offset-2">
-                    <form class="mt-5" method="POST" action="{{ $thread->path().'/replies' }}">
-                        @csrf
-                        <div class="form-group">
-                            <textarea name="body" id="body" class="form-control" placeholder="Have something to say?" rows="5"></textarea>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="level">
+                            <span class="flex">
+                                <a href="/profiles/{{ $thread->creator->name }}">
+                                    {{ $thread->creator->name }} posted:
+                                </a>
+                            </span>
+
+                                @can ('update', $thread)
+                                    <form action="{{ $thread->path() }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-link">DELETE THREAD</button>
+                                    </form>
+                                @endcan
+                            </div>
+
+                            {{ $thread->title }}
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Post</button>
-                    </form>
+                        <div class="card-body">
+                            {{ $thread->body }}
+                        </div>
+                    </div>
+
+                    <replies @added="repliesCount++" @removed="repliesCount--" ></replies>
+
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <p>
+                                This thread was published {{ $thread->created_at->diffForHumans() }} by
+                                <a href="#">{{ $thread->creator->name }}</a>, and currently
+                                has <span v-text="repliesCount"></span> {{ \Illuminate\Support\Str::plural('comment',$thread->replies_count) }}.
+                            </p>
+
+                            <subscribe-button :active="{{ $thread->isSubscribedTo ? 'true' : 'false' }}"></subscribe-button>
+
+                        </div>
+                    </div>
                 </div>
             </div>
-        @endauth
-
-        @guest
-            <p class="text-center">Please <a href="{{ route('login') }}">Sign in</a> to participate in this discussion</p>
-        @endguest
-    </div>
+        </div>
+    </thread-view>
 @endsection

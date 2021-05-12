@@ -17,6 +17,7 @@ use Tests\TestCase;
 class ReadThreadsTest extends TestCase
 {
     use DatabaseMigrations;
+    use RefreshDatabase;
 
     /**
      * @var Collection|Model|mixed
@@ -48,16 +49,6 @@ class ReadThreadsTest extends TestCase
 
     /**
      * @test
-     * @throws Exception
-     */
-    function a_user_can_read_replies_that_are_associated_with_a_thread() {
-       $reply = Reply::factory()->create(['thread_id' => $this->thread->id]);
-
-       $this->get($this->thread->path())->assertSee($reply->body);
-    }
-
-    /**
-     * @test
      */
     function a_user_can_filter_threads_according_to_a_channel() {
         $channel = Channel::factory()->create();
@@ -79,6 +70,59 @@ class ReadThreadsTest extends TestCase
         $threadNotByJohn = create(Thread::class);
 
         $this->get('threads?by=JohnDoe')->assertSee($threadByJohn->title)->assertDontSee($threadNotByJohn->title);
+    }
+
+    /**
+     * @test
+     * @throws Exception
+     */
+    function a_user_can_filter_threads_by_popularity()
+    {
+        $threadWithOneReply = Thread::factory()
+            ->hasReplies(1)
+            ->create();
+
+        $threadWithThreeReplies = Thread::factory()
+            ->hasReplies(3)
+            ->create();
+
+        $threadWithZeroReplies = Thread::factory()->create();
+
+        $this->get('threads?popular=1')
+            ->assertSeeInOrder([
+                $threadWithThreeReplies->title,
+                $threadWithOneReply->title,
+                $threadWithZeroReplies->title
+            ]);
+    }
+
+    /**
+     * @test
+     * @throws Exception
+     */
+    function a_user_can_filter_threads_by_those_that_are_unanswered()
+    {
+        $thread = create(Thread::class);
+        create(Reply::class,['thread_id' => $thread->id]);
+
+        $response = $this->getJson('threads?unanswered=1')->json();
+
+        $this->assertCount(1,$response);
+    }
+
+    /**
+     * @test
+     * @throws Exception
+     */
+    public function a_user_can_request_all_replies_for_a_given_thread()
+    {
+        $thread = create(Thread::class);
+        create(Reply::class,['thread_id' => $thread->id],2);
+
+        $response = $this->getJson($thread->path() . '/replies')->json();
+
+        $this->assertCount(2,$response['data']);
+        $this->assertEquals(2,$response['total']);
     }
 
 }

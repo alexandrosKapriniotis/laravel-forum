@@ -1,4 +1,5 @@
 window._ = require('lodash');
+import Vue from "vue";
 
 /**
  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
@@ -12,6 +13,13 @@ try {
 
     require('bootstrap');
 } catch (e) {}
+
+Vue.prototype.authorize = function(handler){
+
+    let user = window.App.user;
+
+    return user ? handler(user) : false;
+};
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests

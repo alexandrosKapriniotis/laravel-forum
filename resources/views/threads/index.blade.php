@@ -10,17 +10,27 @@
                 </div>
             @endif
 
-            <div class="col-md-8 col-md-offset-2">
-                <header class="font-semibold bg-gray-200 text-gray-700 py-5 px-6 sm:py-6 sm:px-8 sm:rounded-t-md">
-                    Forum threads
-                </header>
-
-                @foreach($threads as $thread)
+            <div class="col-md-8 col-md-offset-2 mt-4">
+                @forelse($threads as $thread)
                     <div class="card">
                         <div class="card-header">
-                            <a href="{{ $thread->path() }}">
-                                {{ $thread->title }}
-                            </a>
+                            <div class="level">
+                                <h4 class="flex">
+                                    <a href="{{ $thread->path() }}">
+                                        @if (auth()->check() && $thread->hasUpdatesFor(auth()->user()))
+                                           <strong>
+                                               {{ $thread->title }}
+                                           </strong>
+                                        @else
+                                            {{ $thread->title }}
+                                        @endif
+                                    </a>
+                                </h4>
+
+                                <a href="{{ $thread->path() }}" style="margin-left: 5px">
+                                    {{ $thread->replies_count }} {{ \Illuminate\Support\Str::plural('reply',$thread->replies_count) }}
+                                </a>
+                            </div>
                         </div>
 
                         <div class="card-body">
@@ -28,7 +38,9 @@
                         </div>
                     </div>
                 <hr>
-                @endforeach
+                @empty
+                    <p>There no relevant results at this time</p>
+                @endforelse
             </div>
         </div>
     </main>

@@ -3,11 +3,13 @@
 namespace Tests;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations as DatabaseMigration;
 
 abstract class TestCase extends BaseTestCase
 {
+    use RefreshDatabase;
     use CreatesApplication;
     use DatabaseMigration;
 
