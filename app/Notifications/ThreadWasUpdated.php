@@ -43,7 +43,7 @@ class ThreadWasUpdated extends Notification
      * @param  mixed  $notifiable
      * @return MailMessage
      */
-    public function toMail($notifiable): MailMessage
+    public function toMail($notifiable)
     {
         return (new MailMessage)
                     ->line('The introduction to the notification.')

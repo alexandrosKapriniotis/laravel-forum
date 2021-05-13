@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Notifications\YouWereMentioned;
 use App\Traits\Favoritable;
 use App\Traits\RecordsActivity;
 use Barryvdh\LaravelIdeHelper\Eloquent;
@@ -13,7 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Notification;
 
 /**
  * App\Models\Reply
@@ -98,27 +96,5 @@ class Reply extends Model
     public function wasJustPublished(): bool
     {
         return $this->created_at->gt(Carbon::now()->subMinute());
-    }
-
-    /**
-     * Fetch all mentioned users within the reply's body.
-     *
-     * @return array
-     */
-    public function mentionedUsers(): array
-    {
-        preg_match_all('/\@([^\s\.]+)/', $this->body, $matches);
-
-        return $matches[1];
-    }
-
-    /**
-     *
-     */
-    public function notifyMentionedUsers(): void
-    {
-        $users = User::whereIn('name', $this->mentionedUsers())->get();
-
-        Notification::send($users, new YouWereMentioned($this));
     }
 }

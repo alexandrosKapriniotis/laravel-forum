@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Models\Reply;
 use App\Models\Thread;
 use App\Notifications\ThreadWasUpdated;
 use Carbon\Carbon;
@@ -60,11 +59,10 @@ class ThreadTest extends TestCase
      * @return void
      */
     function a_thread_can_add_a_reply(){
-        $this->thread->addReply(Reply::create([
-            'body'      => 'Foobar',
-            'user_id'   => 1,
-            'thread_id' => $this->thread->id
-        ]));
+        $this->thread->addReply([
+            'body' => 'Foobar',
+            'user_id' => 1
+        ]);
 
         $this->assertCount(1,$this->thread->replies);
     }
@@ -80,11 +78,10 @@ class ThreadTest extends TestCase
         $this->signIn()
              ->thread
              ->subscribe()
-             ->addReply(Reply::create([
-                'body'      => 'Foobar',
-                'user_id'   => 999,
-                'thread_id' => $this->thread->id
-            ]));
+             ->addReply([
+                'body'    => 'Foobar',
+                'user_id' => 999
+            ]);
 
         Notification::assertSentTo(auth()->user(),ThreadWasUpdated::class);
     }

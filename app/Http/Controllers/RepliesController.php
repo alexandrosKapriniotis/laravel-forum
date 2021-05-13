@@ -13,7 +13,10 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class RepliesController extends Controller
 {
@@ -39,15 +42,10 @@ class RepliesController extends Controller
      */
     public function store($channelId, Thread $thread, CreatePostForm $form): Model
     {
-        $reply = Reply::create([
+        return $thread->addReply([
             'body' => request()->input('body'),
-            'user_id' => auth()->id(),
-            'thread_id' => $thread->id
-        ]);
-
-        $reply = $thread->addReply($reply);
-
-        return $reply->load('owner');
+            'user_id' => auth()->id()
+        ])->load('owner');
     }
 
     /**

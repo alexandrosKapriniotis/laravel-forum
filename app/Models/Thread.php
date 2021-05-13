@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Events\ThreadHasNewReply;
-use App\Events\ThreadReceivedNewReply;
 use App\Notifications\ThreadWasUpdated;
 use App\Traits\RecordsActivity;
 use Barryvdh\LaravelIdeHelper\Eloquent;
@@ -121,17 +120,29 @@ class Thread extends Model
     /**
      * Add a reply to the thread.
      *
-     * @param Reply $reply
+     * @param $reply
      * @return Model
      * @throws Exception
      */
-    public function addReply(Reply $reply): Model
+    public function addReply($reply): Model
     {
         (new \App\Inspections\Spam)->detect($reply['body']);
 
-        event(new ThreadReceivedNewReply($reply));
+        $reply = $this->replies()->create($reply);
+
+        $this->notifySubscribers($reply);
 
         return $reply;
+    }
+
+    /**
+     * @param $reply
+     */
+    public function notifySubscribers($reply)
+    {
+        $this->subscriptions
+            ->where('user_id','!=',$reply->user_id)
+            ->each->notify($reply);
     }
 
     /**
