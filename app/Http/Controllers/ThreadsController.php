@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Validation\ValidationException;
 
 class ThreadsController extends Controller
@@ -47,7 +48,11 @@ class ThreadsController extends Controller
             return $threads;
         }
 
-        return view('threads.index',compact('threads'));
+        $trending = collect(Redis::zrevrange('trending_threads', 0, 4))->map(function ($thread) {
+            return json_decode($thread,true);
+        });
+
+        return view('threads.index',compact('threads','trending'));
     }
 
     /**
@@ -99,6 +104,11 @@ class ThreadsController extends Controller
         $key = sprintf("users.%s.visits.%s",auth()->id(),$thread->id);
 
         cache()->forever($key, Carbon::now());
+
+        Redis::zincrby('trending_threads', 1, json_encode([
+            'title' => $thread->title,
+            'path'  => $thread->path()
+        ]));
 
         return view('threads.show', compact('thread'));
     }
@@ -160,8 +170,7 @@ class ThreadsController extends Controller
             $threads->where('channel_id', $channel->id);
         }
 
-        $threads = $threads->get();
-        return $threads;
+        return $threads->paginate(5);
     }
 
 

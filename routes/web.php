@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfilesController;
 use App\Http\Controllers\RepliesController;
 use App\Http\Controllers\ThreadsController;
 use App\Http\Controllers\ThreadSubscriptionsController;
+use App\Http\Controllers\UserAvatarController;
 use App\Http\Controllers\UserNotificationsController;
 use App\Models\ThreadSubscription;
 use Illuminate\Support\Facades\Auth;
@@ -45,3 +46,4 @@ Route::delete('threads/{channel}/{thread}/subscriptions',[ThreadSubscriptionsCon
 Route::get('/profiles/{user}/notifications',[UserNotificationsController::class,'index']);
 Route::delete('/profiles/{user}/notifications/{notification}',[UserNotificationsController::class,'destroy']);
 Route::get('/profiles/{user}',[ProfilesController::class,'show'])->name('profile');
+Route::post('/api/users/{user}/avatar',[UserAvatarController::class,'store'])->middleware('auth')->name('avatar');

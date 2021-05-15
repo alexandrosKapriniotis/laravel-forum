@@ -59,6 +59,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_path'
     ];
 
     /**
@@ -112,7 +113,21 @@ class User extends Authenticatable
     /**
      * @return HasMany
      */
-    public function activity(){
+    public function activity(): HasMany
+    {
         return $this->hasMany(Activity::class);
     }
+
+    /**
+     * @param $avatar
+     * @return string
+     */
+    public function getAvatarPathAttribute($avatar): string
+    {
+        if (! $avatar) {
+            return '/storage/avatars/default.png';
+        }
+        return '/storage/'.$avatar;
+    }
+
 }

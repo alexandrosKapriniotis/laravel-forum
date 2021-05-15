@@ -10,37 +10,28 @@
                 </div>
             @endif
 
-            <div class="col-md-8 col-md-offset-2 mt-4">
-                @forelse($threads as $thread)
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="level">
-                                <h4 class="flex">
-                                    <a href="{{ $thread->path() }}">
-                                        @if (auth()->check() && $thread->hasUpdatesFor(auth()->user()))
-                                           <strong>
-                                               {{ $thread->title }}
-                                           </strong>
-                                        @else
-                                            {{ $thread->title }}
-                                        @endif
-                                    </a>
-                                </h4>
+            <div class="col-md-8">
+                @include('threads.list')
 
-                                <a href="{{ $thread->path() }}" style="margin-left: 5px">
-                                    {{ $thread->replies_count }} {{ \Illuminate\Support\Str::plural('reply',$thread->replies_count) }}
-                                </a>
-                            </div>
-                        </div>
+                {{ $threads->withQueryString()->links() }}
+            </div>
 
-                        <div class="card-body">
-                            {{ $thread->body }}
-                        </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Trending Threads</h4>
                     </div>
-                <hr>
-                @empty
-                    <p>There no relevant results at this time</p>
-                @endforelse
+
+                    <div class="card-body">
+                        <ul>
+                            @foreach($trending as $thread)
+                                <li>
+                                    <a href="{{ $thread['path'] }}">{{ $thread['title'] }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

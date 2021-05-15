@@ -8,11 +8,13 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="level">
-                            <span class="flex">
-                                <a href="/profiles/{{ $thread->creator->name }}">
-                                    {{ $thread->creator->name }} posted:
-                                </a>
-                            </span>
+                                <img src="{{ asset($thread->creator->avatar_path) }}" alt="{{ $thread->creator->name }}" width="25" height="25">
+
+                                <span class="flex">
+                                    <a href="/profiles/{{ $thread->creator->name }}">
+                                        {{ $thread->creator->name }} posted:
+                                    </a>
+                                </span>
 
                                 @can ('update', $thread)
                                     <form action="{{ $thread->path() }}" method="POST">
