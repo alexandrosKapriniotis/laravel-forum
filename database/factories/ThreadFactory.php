@@ -30,8 +30,9 @@ class ThreadFactory extends Factory
             'channel_id' => function (){
                 return Channel::factory()->create()->id;
             },
-            'title' => $this->faker->sentence,
-            'body' => $this->faker->paragraph
+            'title'     => $this->faker->sentence,
+            'body'      => $this->faker->paragraph,
+            'visits'    => 0
         ];
     }
 }
