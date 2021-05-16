@@ -6,6 +6,7 @@ use App\Models\Channel;
 use App\Models\Thread;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class ThreadFactory extends Factory
 {
@@ -23,6 +24,8 @@ class ThreadFactory extends Factory
      */
     public function definition(): array
     {
+        $title = $this->faker->sentence;
+
         return [
             'user_id' => function () {
                 return User::factory()->create()->id;
@@ -30,9 +33,10 @@ class ThreadFactory extends Factory
             'channel_id' => function (){
                 return Channel::factory()->create()->id;
             },
-            'title'     => $this->faker->sentence,
+            'title'     => $title,
             'body'      => $this->faker->paragraph,
-            'visits'    => 0
+            'visits'    => 0,
+            'slug'      => Str::slug($this->faker->sentence)
         ];
     }
 }

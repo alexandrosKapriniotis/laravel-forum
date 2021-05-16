@@ -102,4 +102,26 @@ class CreateThreadsTest extends TestCase
 
         $this->assertEquals(0,Activity::count());
     }
+
+    /**
+     * @test
+     */
+    function a_thread_requires_a_unique_slug()
+    {
+        $this->signIn();
+
+        $thread = create(Thread::class,['title' => 'Foo Title']);
+
+        $this->assertEquals('foo-title', $thread->fresh()->slug);
+
+        $this->post(route('threads'), $thread->toArray());
+
+        $this->assertTrue(Thread::whereSlug('foo-title-2')->exists());
+
+        $this->post(route('threads'), $thread->toArray());
+
+        $this->assertTrue(Thread::whereSlug('foo-title-3')->exists());
+    }
+
+
 }

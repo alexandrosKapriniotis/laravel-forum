@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * App\Models\Thread
@@ -67,6 +68,10 @@ class Thread extends Model
         static::deleting(function($thread) {
             $thread->replies->each->delete();
         });
+
+        static::created(function($thread) {
+            $thread->update(['slug' => $thread->title]);
+        });
     }
 
     /**
@@ -74,7 +79,7 @@ class Thread extends Model
      */
     public function path(): string
     {
-        return "/threads/{$this->channel->slug}/{$this->id}";
+        return "/threads/{$this->channel->slug}/{$this->slug}";
     }
 
     /**
@@ -201,5 +206,28 @@ class Thread extends Model
         $key = sprintf("users.%s.visits.%s",auth()->id(),$this->id);
 
         return $this->updated_at > cache($key);
+    }
+
+    /**
+     * @return string
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * @param $value
+     */
+    public function setSlugAttribute($value)
+    {
+        $slug = Str::slug($value);
+
+        if (static::whereSlug($slug)->exists())
+        {
+            $slug = "{$slug}-" . $this->id;
+        }
+
+        $this->attributes['slug'] = $slug;
     }
 }

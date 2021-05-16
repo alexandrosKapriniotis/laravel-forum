@@ -22,6 +22,7 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ThreadsController extends Controller
@@ -85,7 +86,8 @@ class ThreadsController extends Controller
             'user_id' => Auth::id(),
             'channel_id' => $request->channel_id,
             'title' => $request->title,
-            'body'  => $request->body
+            'body'  => $request->body,
+            'slug'  => $request->title
         ]);
 
         return redirect($thread->path())
@@ -103,9 +105,11 @@ class ThreadsController extends Controller
      */
     public function show($channelId,Thread $thread,Trending $trending)
     {
-        $key = sprintf("users.%s.visits.%s",auth()->id(),$thread->id);
+        if(auth()->check()){
+            $key = sprintf("users.%s.visits.%s",auth()->id(),$thread->id);
 
-        cache()->forever($key, Carbon::now());
+            cache()->forever($key, Carbon::now());
+        }
 
         $trending->push($thread);
 
