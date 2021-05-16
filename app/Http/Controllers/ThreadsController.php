@@ -8,6 +8,7 @@ use App\Models\Thread;
 use App\Models\User;
 use App\Filters\ThreadFilters;
 use App\Rules\Spamfree;
+use App\Trending;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
@@ -38,9 +39,10 @@ class ThreadsController extends Controller
      *
      * @param Channel $channel
      * @param ThreadFilters $filters
+     * @param Trending $trending
      * @return Application|Factory|View|Response
      */
-    public function index(Channel $channel, ThreadFilters $filters)
+    public function index(Channel $channel, ThreadFilters $filters,Trending $trending)
     {
         $threads = $this->getThreads($filters, $channel);
 
@@ -48,11 +50,10 @@ class ThreadsController extends Controller
             return $threads;
         }
 
-        $trending = collect(Redis::zrevrange('trending_threads', 0, 4))->map(function ($thread) {
-            return json_decode($thread,true);
-        });
-
-        return view('threads.index',compact('threads','trending'));
+        return view('threads.index',[
+            'threads'  => $threads,
+            'trending' => $trending->get()
+        ]);
     }
 
     /**
@@ -96,19 +97,19 @@ class ThreadsController extends Controller
      *
      * @param  $channelId
      * @param Thread $thread
+     * @param Trending $trending
      * @return Application|Factory|View
      * @throws Exception
      */
-    public function show($channelId,Thread $thread)
+    public function show($channelId,Thread $thread,Trending $trending)
     {
         $key = sprintf("users.%s.visits.%s",auth()->id(),$thread->id);
 
         cache()->forever($key, Carbon::now());
 
-        Redis::zincrby('trending_threads', 1, json_encode([
-            'title' => $thread->title,
-            'path'  => $thread->path()
-        ]));
+        $trending->push($thread);
+
+        $thread->visits()->record();
 
         return view('threads.show', compact('thread'));
     }

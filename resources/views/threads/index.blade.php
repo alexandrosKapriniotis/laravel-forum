@@ -17,21 +17,23 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Trending Threads</h4>
-                    </div>
+                @if (count($trending))
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Trending Threads</h4>
+                        </div>
 
-                    <div class="card-body">
-                        <ul>
-                            @foreach($trending as $thread)
-                                <li>
-                                    <a href="{{ $thread['path'] }}">{{ $thread['title'] }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
+                        <div class="card-body">
+                            <ul>
+                                @foreach($trending as $thread)
+                                    <li>
+                                        <a href="{{ $thread->path }}">{{ $thread->title }}</a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
     </main>
