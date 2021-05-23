@@ -90,6 +90,11 @@ class User extends Authenticatable
         return 'name';
     }
 
+    public function isAdmin(): bool
+    {
+        return in_array($this->name,['Alexander Kapriniotis','JaneDoe']);
+    }
+
     /**
      * Fetch the last published reply for the user.
      *

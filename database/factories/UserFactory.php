@@ -44,4 +44,19 @@ class UserFactory extends Factory
             ];
         });
     }
+
+    /**
+     * Indicate that the user is suspended.
+     *
+     * @return Factory
+     */
+    public function administrator(): Factory
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'name' => 'Alexander Kapriniotis',
+            ];
+        });
+    }
+
 }

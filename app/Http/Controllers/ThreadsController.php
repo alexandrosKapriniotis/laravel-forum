@@ -7,10 +7,12 @@ use App\Models\Channel;
 use App\Models\Thread;
 use App\Models\User;
 use App\Filters\ThreadFilters;
+use App\Rules\Recaptcha;
 use App\Rules\Spamfree;
 use App\Trending;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\View\Factory;
@@ -21,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -67,19 +70,41 @@ class ThreadsController extends Controller
     }
 
     /**
+     * @param Channel $channel
+     * @param Thread $thread
+     * @throws AuthorizationException
+     */
+    public function update(Channel $channel, Thread $thread)
+    {
+        $this->authorize('update',$thread);
+
+        $thread->update(request()->validate([
+            'title' => 'required',
+            'body'  => 'required'
+        ]));
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @param Spam $spam
+     * @param Recaptcha $recaptcha
      * @return Application|Redirector|RedirectResponse
      * @throws ValidationException
      */
-    public function store(Request $request,Spam $spam)
+    public function store(Request $request,Recaptcha $recaptcha)
     {
         $this->validate($request, [
             'title' => 'required', new Spamfree,
             'body' => 'required', new Spamfree,
-            'channel_id' => 'required|exists:channels,id'
+            'channel_id' => 'required|exists:channels,id',
+            'g-recaptcha-response'  => 'required',$recaptcha
+        ]);
+
+        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => config('services.recaptcha.secret'),
+            'response'  => $request->input('g-recaptcha-response'),
+            'remoteip'  => request()->ip()
         ]);
 
         $thread = Thread::create([
@@ -125,18 +150,6 @@ class ThreadsController extends Controller
      * @return Response
      */
     public function edit(Thread $thread)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param Request $request
-     * @param Thread $thread
-     * @return Response
-     */
-    public function update(Request $request, Thread $thread)
     {
         //
     }

@@ -6,15 +6,32 @@ use App\Models\Activity;
 use App\Models\Channel;
 use App\Models\Reply;
 use App\Models\Thread;
+use App\Models\User;
+use App\Rules\Recaptcha;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Testing\TestResponse;
+use Mockery;
 use Tests\TestCase;
 
 class CreateThreadsTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Http::fake(function($request){
+            if ($request['response'] == 'invalid') {
+                return Http::response(['success' => false]);
+            }
+            return Http::response(['success' => true]);
+        });
+    }
+
     use RefreshDatabase;
+
 
     /**
      * @test
@@ -29,12 +46,11 @@ class CreateThreadsTest extends TestCase
     /** @test */
     function an_authenticated_user_can_create_new_forum_threads()
     {
-        $this->signIn();
-        $thread = make(Thread::class);
+        $response = $this->publishThread(['title' => 'some title','body' => 'some body']);
 
-        $this->followingRedirects();
-
-        $this->post('/threads', $thread->toArray())->assertSee($thread->body);
+        $this->followingRedirects()->get($response->headers->get('location'))
+            ->assertSee('some title')
+            ->assertSee('some body');
     }
 
     /** @test */
@@ -66,7 +82,7 @@ class CreateThreadsTest extends TestCase
 
         $thread = make(Thread::class,$overrides);
 
-        return $this->post('/threads',$thread->toArray());
+        return $this->post('/threads',$thread->toArray() + ['g-recaptcha-response' => 'token']);
     }
 
     /**
@@ -114,14 +130,23 @@ class CreateThreadsTest extends TestCase
 
         $this->assertEquals('foo-title', $thread->fresh()->slug);
 
-        $this->post(route('threads'), $thread->toArray());
+        $this->post(route('threads'), $thread->toArray() + ['g-recaptcha-response' => 'token']);
 
         $this->assertTrue(Thread::whereSlug('foo-title-2')->exists());
 
-        $this->post(route('threads'), $thread->toArray());
+        $this->post(route('threads'), $thread->toArray() + ['g-recaptcha-response' => 'token']);
 
         $this->assertTrue(Thread::whereSlug('foo-title-3')->exists());
     }
 
+    /**
+     * @test
+     */
+    function a_thread_requires_a_recaptcha_verification()
+    {
+        $this->withExceptionHandling();
 
+        $this->followingRedirects()->publishThread(['g-recaptcha-response' => 'invalid'])
+            ->assertSessionHasErrors('g-recaptcha-response');
+    }
 }

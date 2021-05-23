@@ -26,6 +26,7 @@
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/site.css') }}" rel="stylesheet">
+    @yield('head')
 </head>
 <body style="padding-bottom: 80px;">
     <div id="app">

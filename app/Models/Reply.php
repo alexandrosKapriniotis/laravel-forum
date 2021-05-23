@@ -48,7 +48,7 @@ class Reply extends Model
 
     protected $guarded = [];
     protected $with    = ['owner','favorites'];
-    protected $appends = ['favoritesCount','isFavorited'];
+    protected $appends = ['favoritesCount','isFavorited','isBest'];
 
     protected static function boot()
     {
@@ -59,6 +59,11 @@ class Reply extends Model
         });
 
         static::deleted(function ($reply) {
+
+            if ($reply->isBest()){
+                $reply->thread->update(['best_reply_id' => null]);
+            }
+
             $reply->thread->decrement('replies_count');
         });
     }
@@ -96,5 +101,21 @@ class Reply extends Model
     public function wasJustPublished(): bool
     {
         return $this->created_at->gt(Carbon::now()->subMinute());
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBest(): bool
+    {
+        return $this->thread->best_reply_id == $this->id;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIsBestAttribute(): bool
+    {
+        return $this->isBest();
     }
 }
